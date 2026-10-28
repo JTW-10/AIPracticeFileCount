@@ -8,17 +8,7 @@ if (string.IsNullOrWhiteSpace(inputPath))
     return;
 }
 
-string directoryPath;
-
-try
-{
-    directoryPath = Path.GetFullPath(inputPath.Trim());
-}
-catch (ArgumentException)
-{
-    Console.WriteLine($"The path is invalid: {inputPath}");
-    return;
-}
+string directoryPath = Path.GetFullPath(inputPath.Trim());
 
 if (!Directory.Exists(directoryPath))
 {
@@ -37,11 +27,19 @@ Console.WriteLine();
 Console.WriteLine($"Total files: {totalFiles}");
 Console.WriteLine($"Total folders: {totalFolders}");
 Console.WriteLine();
-Console.WriteLine("Files by folder:");
+Console.WriteLine("Files by folder and type:");
 
 foreach ((string folder, List<string> files) in filesByFolder.OrderBy(entry => entry.Key))
 {
     Console.WriteLine($"{folder}: {files.Count} file(s)");
+
+    foreach (var typeGroup in files
+        .Select(GetFileType)
+        .GroupBy(type => type, StringComparer.OrdinalIgnoreCase)
+        .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
+    {
+        Console.WriteLine($"  {typeGroup.Key}: {typeGroup.Count()} file(s)");
+    }
 }
 
 if (inaccessibleFolders.Count > 0)
@@ -59,6 +57,12 @@ string? ReadDirectoryPath()
 {
     Console.Write("Enter a directory path: ");
     return Console.ReadLine();
+}
+
+string GetFileType(string file)
+{
+    string extension = Path.GetExtension(file);
+    return string.IsNullOrEmpty(extension) ? "No extension" : extension.ToLowerInvariant();
 }
 
 void ScanDirectory(string currentDirectory)
